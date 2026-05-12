@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>حضور وغياب الكنيسة</title>
+    <style>
+        *{margin:0;padding:0;box-sizing:border-box;font-family:'Segoe UI',system-ui}
+        body{background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);min-height:100vh;padding:20px}
+        .container{max-width:1200px;margin:0 auto}
+        .screen{background:white;border-radius:24px;padding:24px;box-shadow:0 20px 60px rgba(0,0,0,0.3);animation:fadeIn 0.3s}
+        .hidden{display:none}
+        @keyframes fadeIn{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+        h1{color:#1e293b;text-align:center;margin-bottom:24px}
+        .card{text-align:center;padding:20px}
+        .btn-primary,.btn-secondary,.btn-back{padding:12px 24px;margin:8px;border:none;border-radius:30px;cursor:pointer;font-weight:bold;transition:0.2s}
+        .btn-primary{background:#667eea;color:white}
+        .btn-secondary{background:#48bb78;color:white}
+        .btn-back{background:#e2e8f0;color:#1e293b}
+        .member-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:15px;margin-top:20px}
+        .member-card{background:linear-gradient(135deg,#667eea,#764ba2);color:white;padding:12px;border-radius:16px;text-align:center;cursor:pointer;transition:0.2s}
+        .months-tabs{display:flex;gap:8px;margin:20px 0;overflow-x:auto}
+        .month-tab{padding:8px 16px;background:#e2e8f0;border:none;border-radius:30px;cursor:pointer;white-space:nowrap}
+        .month-tab.active{background:#667eea;color:white}
+        .attendance-buttons{display:grid;grid-template-columns:repeat(auto-fit,minmax(100px,1fr));gap:12px;margin:20px 0}
+        .status-btn{padding:12px;border:none;border-radius:16px;cursor:pointer;font-weight:bold;transition:0.2s}
+        .present{background:#48bb78;color:white}
+        .late{background:#ed8936;color:white}
+        .absent{background:#f56565;color:white}
+        .excused{background:#4299e1;color:white}
+        .travel{background:#805ad5;color:white}
+        .current-status{background:#f1f5f9;padding:16px;border-radius:16px;margin:16px 0;text-align:center}
+        .stats{background:#f8fafc;padding:20px;border-radius:20px;margin-top:16px}
+        .admin-stats,.members-table{margin:20px 0}
+        table{width:100%;border-collapse:collapse;background:white;border-radius:16px;overflow:hidden;box-shadow:0 4px 12px rgba(0,0,0,0.05)}
+        th,td{padding:12px;text-align:center;border-bottom:1px solid #e2e8f0}
+        th{background:#1e293b;color:white}
+        .filter-buttons{display:flex;gap:8px;justify-content:center;margin:16px 0}
+        .filter-buttons button{background:#e2e8f0;border:none;padding:8px 20px;border-radius:40px;cursor:pointer}
+        .filter-buttons button.active{background:#2563eb;color:white}
+        .settings-card{background:#f1f5f9;padding:16px;border-radius:16px;margin:16px 0}
+        .settings-card h3{color:#1e293b;margin-bottom:12px}
+        .time-input{display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+        .time-input input{padding:8px 12px;border:1px solid #cbd5e1;border-radius:12px;width:120px}
+        .dialog{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center;z-index:1000}
+        .dialog.hidden{display:none}
+        .dialog-content{background:white;padding:24px;border-radius:24px;text-align:center;width:90%;max-width:350px}
+        input,select{width:100%;padding:12px;margin:10px 0;border:1px solid #cbd5e1;border-radius:12px}
+        .btn-edit{padding:4px 12px;background:#3b82f6;color:white;border:none;border-radius:20px;cursor:pointer}
+        .btn-small{background:#3b82f6;color:white;border:none;padding:6px 12px;border-radius:20px;cursor:pointer}
+        @media(max-width:640px){th,td{font-size:12px;padding:8px}}
+    </style>
+</head>
+<body>
+<div class="container">
+    <div id="loginScreen" class="screen">
+        <h1>📖 نظام الحضور والغياب</h1>
+        <div class="card">
+            <h2>اختر هويتك</h2>
+            <button onclick="showMemberList()" class="btn-primary">👤 عضو</button>
+            <button onclick="showAdminLogin()" class="btn-secondary">🛡️ أدمن</button>
+        </div>
+    </div>
+
+    <div id="memberScreen" class="screen hidden">
+        <button onclick="backToLogin()" class="btn-back">← رجوع</button>
+        <h2 style="margin-top:12px">اختر اسمك</h2>
+        <div id="memberList" class="member-grid"></div>
+    </div>
+
+    <div id="memberDashboard" class="screen hidden">
+        <button onclick="backToMemberList()" class="btn-back">← رجوع</button>
+        <h2 id="memberName" style="margin-top:12px"></h2>
+        <div class="months-tabs" id="memberMonthsTabs"></div>
+        <div class="attendance-buttons" id="attendanceButtons">
+            <button class="status-btn present" onclick="recordStatus('present')">✅ حاضر</button>
+            <button class="status-btn late" onclick="recordLateAuto()">⏰ متأخر</button>
+            <button class="status-btn absent" onclick="recordStatus('absent')">❌ غائب بدون عذر</button>
+            <button class="status-btn excused" onclick="recordStatus('excused')">📝 غائب بعذر</button>
+            <button class="status-btn travel" onclick="recordStatus('travel')">✈️ مسافر</button>
+        </div>
+        <div id="currentStatus" class="current-status"></div>
+        <div class="stats"><h3>📊 نسبتي الشخصية</h3><div id="personalStats"></div></div>
+    </div>
+
+    <div id="adminLoginScreen" class="screen hidden">
+        <button onclick="backToLogin()" class="btn-back">← رجوع</button>
+        <h2 style="margin-top:12px">دخول الأدمن</h2>
+        <div class="card">
+            <input type="text" id="adminUsername" placeholder="اسم المستخدم">
+            <input type="password" id="adminPassword" placeholder="كلمة السر">
+            <button onclick="verifyAdmin()" class="btn-primary">دخول</button>
+        </div>
+    </div>
+
+    <div id="adminDashboard" class="screen hidden">
+        <button onclick="backToLogin()" class="btn-back">← خروج</button>
+        <h2 style="margin-top:12px">لوحة تحكم الأدمن</h2>
+        
+        <div class="settings-card">
+            <h3>⚙️ إعدادات الموعد الرسمي</h3>
+            <div class="time-input">
+                <span>الموعد الحالي:</span>
+                <strong id="currentOfficialTime">09:00</strong>
+                <input type="time" id="newOfficialTime" value="09:00">
+                <button onclick="updateOfficialTime()" class="btn-small">تحديث</button>
+            </div>
+        </div>
+
+        <div id="adminMonthsTabs" class="months-tabs"></div>
+        <div class="filter-buttons">
+            <button id="filterMonthly" class="active">📆 شهري</button>
+            <button id="filterWeekly">📅 أسبوعي (آخر سبت)</button>
+        </div>
+        <div style="display:flex; gap:8px; justify-content:center; flex-wrap:wrap; margin:12px 0">
+            <button id="downloadPDFBtn" style="background:#e53e3e;color:white;padding:8px 16px;border:none;border-radius:40px">📄 تحميل PDF</button>
+            <button onclick="window.print()" style="background:#48bb78;color:white;padding:8px 16px;border:none;border-radius:40px">🖨️ طباعة</button>
+            <button id="changePasswordBtn" style="background:#f59e0b;color:white;padding:8px 16px;border:none;border-radius:40px">🔑 تغيير كلمة المرور</button>
+        </div>
+        <div id="pdf-content">
+            <div id="adminStats"></div>
+            <div id="allMembersTable"></div>
+        </div>
+    </div>
+</div>
+
+<script>
+    window.SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzP38961HKB4JpJFb1tLavu4wbX3tzoOiDRNzgL2EDqbiPrATqDINMORD0TzhAK4ED7/exec';
+    console.log("✅ Google Sheets API ready");
+</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+<script src="script.js"></script>
+</body>
+</html>

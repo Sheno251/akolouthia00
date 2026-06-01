@@ -1,0 +1,22 @@
+{
+  "name": "أكولوثيا",
+  "short_name": "أكولوثيا",
+  "start_url": ".",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#667eea",
+  "icons": [
+    {
+      "src": "maskable_icon.png",
+      "sizes": "1411x1411",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "maskable_icon_x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}
